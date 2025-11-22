@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tick Sightings Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Elanco - Tick Sightings API display</h1>
+            <p class="subtitle">This is a simple dashboard displaying the API outputs from the backend</p>
+        </header>
+
+        <!-- Health Check -->
+        <div class="card">
+            <h2>Backend Health Check</h2>
+            <p>Check if the API server is running correctly</p>
+            <button onclick="healthCheck()">Check Server Status</button>
+            <div id="health-result"></div>
+        </div>
+
+        <!-- Search & Filter -->
+        <div class="card">
+            <h2>Search & Filter</h2>
+            <p>Search sightings by date range, location, or species</p>
+            <div class="input-group">
+                <input type="date" id="start-date">
+                <input type="date" id="end-date">
+                <select id="location">
+                    <option value="">All Locations</option>
+                </select>
+                <select id="species">
+                    <option value="">All Species</option>
+                </select>
+            </div>
+            <div class="button-group">
+                <button onclick="searchSightings()">Search</button>
+                <button onclick="resetFilters()" style="background: #6c757d;">Reset Filters</button>
+            </div>
+            <div id="search-result"></div>
+        </div>
+
+        <!-- Region Statistics -->
+        <div class="card">
+            <h2>Region Statistics</h2>
+            <p>View sightings count by location</p>
+            <button onclick="getRegionStats()">Get Region Stats</button>
+            <div id="region-result"></div>
+        </div>
+
+        <!-- Trends Over Time -->
+        <div class="card">
+            <h2>Trends Over Time</h2>
+            <p>Analyze sightings trends weekly or monthly</p>
+            <div class="button-group">
+                <button onclick="getTrends('monthly')">Monthly Trends</button>
+                <button onclick="getTrends('weekly')">Weekly Trends</button>
+            </div>
+            <div id="trends-result"></div>
+        </div>
+
+        <!-- Species Statistics -->
+        <div class="card">
+            <h2>Species Statistics</h2>
+            <p>View sightings count by species type</p>
+            <button onclick="getSpeciesStats()">Get Species Stats</button>
+            <div id="species-result"></div>
+        </div>
+
+        <!-- Risk Assessment -->
+        <div class="card">
+            <h2>Risk Assessment</h2>
+            <p>Identify high-risk areas based on sighting patterns</p>
+            <button onclick="getRiskAssessment()">Analyze Risk Levels</button>
+            <div id="risk-result"></div>
+        </div>
+
+        <!-- Seasonal Patterns -->
+        <div class="card">
+            <h2>Seasonal Pattern Analysis</h2>
+            <p>Peak activity months for each species</p>
+            <button onclick="getSeasonalPatterns()">Analyze Patterns</button>
+            <div id="seasonal-result"></div>
+        </div>
+
+        <!-- Forecast -->
+        <div class="card">
+            <h2>Trend Forecasting (ML)</h2>
+            <p>Predict next 3 months using linear regression</p>
+            <button onclick="getForecast()">Generate Forecast</button>
+            <div id="forecast-result"></div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
