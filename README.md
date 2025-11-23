@@ -33,7 +33,7 @@ This project provides a backend service and a simple dashboard interface for vis
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 ```
 api-backend.py         # Main Flask API  
 data-handling.py       # Data processing, filtering & analytics  
@@ -106,7 +106,7 @@ The backend can be deployed on an AWS EC2 instance, and the frontend can consume
 
 ---
 
-## 📄 Additional Documentation
+## Additional Documentation
 See the separate *Documentation* file for details on:
 - Architecture choices
 - Data consumption & processing flow
