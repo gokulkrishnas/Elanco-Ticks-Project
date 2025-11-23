@@ -1,163 +1,113 @@
-# Tick Sightings Backend - MVP
+# Tick Sightings Analytics – Backend & Dashboard  
+A backend + frontend MVP for analysing UK tick sightings data. Built for the Elanco Placement Technical Task.
 
-A simple backend system for managing tick sighting data in the UK.
+---
 
-## Features
+## Overview
+This project provides a backend service and a simple dashboard interface for visualising and analysing tick sightings across the UK. It includes:
 
-✅ Data ingestion from API with cleaning and deduplication  
-✅ SQLite database for efficient storage  
-✅ REST API with search and filtering  
-✅ Statistics and trends endpoints  
-✅ Error handling and logging  
+- Data ingestion and cleaning  
+- Search & filtering  
+- Regional and species-based analytics  
+- Weekly/monthly trend analysis  
+- Seasonal pattern extraction  
+- Risk assessment  
+- Machine learning forecasting (Linear Regression) 
+- A simple frontend dashboard that interacts with all backend endpoints to display the output
 
-## Requirements
+---
 
-Create a `requirements.txt` file with:
+## Tech Stack Used
 
+### **Backend**
+- Python  
+- Flask (REST API)  
+- NumPy  
+- Scikit-learn (Linear Regression model)  
+- Joblib (model saving/loading)
+
+### **Frontend**
+- HTML  
+- CSS  
+- JavaScript (Fetch API calls)
+
+---
+
+## 📁 Project Structure
 ```
-flask==3.0.0
-flask-cors==4.0.0
-requests==2.31.0
+api-backend.py         # Main Flask API  
+data-handling.py       # Data processing, filtering & analytics  
+model-training.py      # ML forecasting logic  
+requirements.txt       # Python dependencies  
+index.html             # Dashboard UI  
+style.css              # UI styling  
+main.js                # Fetch calls to backend  
 ```
 
-## Installation
+---
 
-```bash
-# Install dependencies
+## API Features
+
+### 1. Health Check  
+Ensures backend server is up and running.
+
+### 2. Search & Filtering  
+Filter sightings by:
+- Date range  
+- Location  
+- Species  
+
+### 3. Data Reporting  
+- Sightings by region  
+- Species distribution  
+- Weekly or monthly trends  
+- Seasonal patterns  
+
+### 4. Risk Assessment  
+Identifies high-risk areas based on sighting density & frequency and colour codes them.
+
+### 5. Forecasting (ML)  
+Predicts the next 3 months of sightings using a simple linear regression model.
+
+---
+
+## Running the Project
+
+### 1. Install dependencies
+```
 pip install -r requirements.txt
-
-# Run data ingestion (first time)
-python batch1_ingestion.py
-
-# Start the API server
-python batch2_api.py
+```
+### 2. Load the data to database
+```
+python data-handling.py
+```
+### 3. Create a pipeline for forecast model
+```
+python model-training.py
 ```
 
-## Project Structure
-
+### 4. Start the backend
 ```
-tick-sightings-backend/
-├── batch1_ingestion.py      # Data fetching and storage
-├── batch2_api.py             # Flask API server
-├── requirements.txt          # Python dependencies
-├── tick_sightings.db        # SQLite database (auto-created)
-└── README.md                 # This file
+python api-backend.py
 ```
 
-## API Endpoints
-
-### Health Check
+Backend defaults to:
 ```
-GET /
+http://localhost:8432/
 ```
 
-### Get All Sightings
-```
-GET /api/sightings?page=1&per_page=100
-```
+### 5. Open the frontend
+Open **index.html** directly in your browser.
 
-### Search & Filter
-```
-GET /api/sightings/search?start_date=2024-01-01&end_date=2024-12-31&location=London&species=Ixodes
-```
+---
 
-**Parameters:**
-- `start_date` - Filter by start date (YYYY-MM-DD)
-- `end_date` - Filter by end date (YYYY-MM-DD)
-- `location` - Filter by location (partial match)
-- `species` - Filter by species name (partial match)
+## Hosting Note  
+The backend can be deployed on an AWS EC2 instance, and the frontend can consume it simply by updating the `API_BASE` URL inside `main.js`.
 
-### Region Statistics
-```
-GET /api/stats/regions
-```
-Returns count of sightings per location.
+---
 
-### Trends Over Time
-```
-GET /api/stats/trends?period=monthly
-```
-**Parameters:**
-- `period` - "weekly" or "monthly" (default: monthly)
-
-### Species Statistics
-```
-GET /api/stats/species
-```
-Returns count by species type.
-
-## Example Usage
-
-```bash
-# Test the API
-curl http://localhost:5000/
-
-# Get sightings
-curl http://localhost:5000/api/sightings
-
-# Search by location
-curl "http://localhost:5000/api/sightings/search?location=London"
-
-# Get region stats
-curl http://localhost:5000/api/stats/regions
-
-# Get monthly trends
-curl http://localhost:5000/api/stats/trends?period=monthly
-```
-
-## Data Processing Strategy
-
-1. **Ingestion**: Fetch data from external API
-2. **Cleaning**: Remove duplicates, handle missing fields
-3. **Storage**: Store in SQLite with indexed fields
-4. **Serving**: Provide filtered and aggregated data via REST API
-
-## Error Handling
-
-- API failures are logged and handled gracefully
-- Duplicate entries are automatically skipped
-- Missing data fields are filled with defaults
-- All endpoints return JSON with success/error status
-
-## Architecture Decisions
-
-### Why SQLite?
-- Simple, serverless, no setup required
-- Perfect for MVP and moderate data sizes
-- Easy to deploy
-
-### Why Flask?
-- Lightweight and simple
-- Quick to set up and understand
-- Good for backend API services
-
-### Data Strategy
-- Batch ingestion to avoid overwhelming the API
-- Duplicate detection using unique external ID
-- Indexes on date and location for faster queries
-
-## Future Improvements (If More Time)
-
-- [ ] Scheduled data updates (cron job)
-- [ ] Data validation with Pydantic
-- [ ] Authentication and rate limiting
-- [ ] PostgreSQL for production
-- [ ] Caching layer (Redis)
-- [ ] Docker containerization
-- [ ] Unit tests
-- [ ] API documentation (Swagger/OpenAPI)
-
-## Troubleshooting
-
-**Database not created?**
-Run `batch1_ingestion.py` first to create the database.
-
-**API connection error?**
-Check if the external API is accessible: https://dev-task.elancoapps.com/
-
-**CORS issues?**
-Flask-CORS is enabled for all origins in development.
-
-## Contact
-
-For issues, contact: BECKY.MEARS@network.elancoah.com
+## 📄 Additional Documentation
+See the separate *Documentation* file for details on:
+- Architecture choices
+- Data consumption & processing flow
+- What could be improved with more time

@@ -3,7 +3,6 @@ from flask_cors import CORS
 import sqlite3
 from datetime import datetime, timedelta
 import logging
-
 import joblib
 import numpy as np
 
@@ -16,17 +15,15 @@ logger = logging.getLogger(__name__)
 DB_NAME = 'tick_sightings.db'
 MODEL_PATH = "tick_forecast_model.pkl"
 
-
+# Creating database connection
 def get_db_connection():
-    """Create database connection"""
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
     return conn
 
-
+# Health check endpoint
 @app.route('/')
 def home():
-    """Health check endpoint"""
     return jsonify({
         'status': 'ok',
         'message': 'Tick Sightings API is running',
@@ -43,10 +40,9 @@ def home():
         ]
     })
 
-
+# Get all the sightings with pagination if needed.
 @app.route('/api/sightings', methods=['GET'])
 def get_sightings():
-   # Get all sightings with optional pagination
     try:
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 100))
@@ -82,10 +78,9 @@ def get_sightings():
         logger.error(f"Error fetching sightings: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-
+# Search sightings with date range, location and species filters
 @app.route('/api/sightings/search', methods=['GET'])
 def search_sightings():
-    # Search and filter sightings
     try:
         start_date = request.args.get('start_date', '')
         end_date = request.args.get('end_date', '')
@@ -114,7 +109,7 @@ def search_sightings():
             query += ' AND species = ?'
             params.append(species)
         
-        query += ' ORDER BY date DESC, time DESC LIMIT 500'
+        query += ' ORDER BY date DESC, time DESC'
         
         cursor.execute(query, params)
         results = [dict(row) for row in cursor.fetchall()]
@@ -130,10 +125,9 @@ def search_sightings():
         logger.error(f"Error searching sightings: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-
+# Get total number of tick sightings per location(region)
 @app.route('/api/stats/regions', methods=['GET'])
 def get_region_stats():
-    # Get total number of tick sightings per location
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -157,10 +151,10 @@ def get_region_stats():
         logger.error(f"Error fetching region stats: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-
+# Get monthly and weekly trends depending on the selection
+# Query limited to only last 50 periods to avoid overload
 @app.route('/api/stats/trends', methods=['GET'])
 def get_trends():
-    # Get monthly and weekly trends depending on selection
     try:
         period = request.args.get('period', 'monthly')
         
@@ -174,7 +168,7 @@ def get_trends():
                 WHERE date != ''
                 GROUP BY period
                 ORDER BY period DESC
-                LIMIT 52
+                LIMIT 50
             ''')
         else:
             cursor.execute('''
@@ -183,7 +177,7 @@ def get_trends():
                 WHERE date != ''
                 GROUP BY period
                 ORDER BY period DESC
-                LIMIT 24
+                LIMIT 50
             ''')
         
         results = [dict(row) for row in cursor.fetchall()]
@@ -199,10 +193,9 @@ def get_trends():
         logger.error(f"Error fetching trends: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-
+# Get statistics by species of the Ticks
 @app.route('/api/stats/species', methods=['GET'])
 def get_species_stats():
-    # Get statistics by species of Ticks
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -226,14 +219,15 @@ def get_species_stats():
         logger.error(f"Error fetching species stats: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# Calculate the risk score for each location based on recent sightings
+# Also categorise them into HIGH, MEDIUM, LOW risk levels along with colours. 
 @app.route('/api/risk/assessment', methods=['GET'])
 def get_risk_assessment():
-    # Calculate the risk scores by each location
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Get the most recent date in the database (2024-12-30 based on the current data).
+        # Get the most recent date in the database (2024-12-30 based on the data we have).
         cursor.execute("SELECT MAX(date) as max_date FROM sightings WHERE date != ''")
         max_date_row = cursor.fetchone()
         max_date = max_date_row['max_date'] if max_date_row else None
@@ -241,7 +235,7 @@ def get_risk_assessment():
         if not max_date:
             return jsonify({'success': False, 'error': 'No valid dates in database'}), 400
         
-        # Calculate 3 months (90 days) before the latest date
+        # Calculate 3 months (90 days) from the latest date we have
         latest_date = datetime.strptime(max_date, '%Y-%m-%dT%H:%M:%S')
         three_months_ago = (latest_date - timedelta(days=90)).strftime('%Y-%m-%dT%H:%M:%S')
         
@@ -260,32 +254,34 @@ def get_risk_assessment():
         if not rows:
             return jsonify({'success': False, 'error': 'No sightings available'}), 400
         
-        # Convert rows into dicts
+        # Convert rows into dictionaries
         results_raw = [dict(row) for row in rows]
 
-        # --- Dynamic ranges for normalization ---
+        # Dynamic ranges for normalization calculation based on total and recent sightings
         totals = [r['total_sightings'] for r in results_raw]
         recents = [r['recent_sightings'] for r in results_raw]
 
         min_total = min(totals)
         max_total = max(totals)
-        max_recent = max(recents) if max(recents) > 0 else 1  # avoid division by zero
+        max_recent = max(recents) if max(recents) > 0 else 1  # to avoid division by zero just in case
 
-        # Prepare final results with risk scoring
+        # Preparing the final results with risk scoring and then classification
         results = []
         for r in results_raw:
             total = r['total_sightings']
             recent = r['recent_sightings']
 
-            # --- Normalized values (0–1) ---
-            T_norm = (total - min_total) / (max_total - min_total) if max_total > min_total else 0 # total sightings normalization
-            R_norm = recent / max_recent if max_recent > 0 else 0 # recent sightings normalization
+            # Normalized values
+            # total sightings normalization
+            T_norm = (total - min_total) / (max_total - min_total) if max_total > min_total else 0
+            # recent sightings normalization
+            R_norm = recent / max_recent if max_recent > 0 else 0 
 
-            # --- Weighted risk score (0–100) ---
+            # Weighted risk score based on total (60%) and recent sightings (40%)
             risk_score = (T_norm * 0.6 + R_norm * 0.4) * 100
             risk_score = round(min(100, max(0, risk_score)), 1)
 
-            # Risk classification
+            # Risk classification and colour coding
             if risk_score >= 70:
                 risk_level = 'HIGH'
                 color = 'red'
@@ -320,11 +316,10 @@ def get_risk_assessment():
         logger.error(f"Error in risk assessment: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-
+# Analyze seasonal patterns by species to see peak months for each sighting species
+# All the years data are aggregated here
 @app.route('/api/patterns/seasonal', methods=['GET'])
 def seasonal_patterns():
-    # Analyze seasonal patterns by species to see peak months for each sighting species
-    # All the years data is aggregated here
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -365,7 +360,7 @@ def seasonal_patterns():
         logger.error(f"Error in seasonal analysis: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-
+# Forecast tick sighting trends for next 3 months using pretrained linear regression model
 @app.route('/api/forecast/trends', methods=['GET'])
 def forecast_trends():
     try:
@@ -410,85 +405,6 @@ def forecast_trends():
     except Exception as e:
         logger.error(f"Error in forecasting: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@app.route('/api/risk/scoring', methods=['GET'])
-def get_risk_scoring():
-    """Calculate predictive risk scores with color coding"""
-    try:
-        danger_level = request.args.get('danger_level', '')
-        
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            SELECT 
-                location,
-                COUNT(*) as total_sightings,
-                COUNT(CASE WHEN date >= date('now', '-7 days') THEN 1 END) as recent_7d,
-                COUNT(CASE WHEN date >= date('now', '-30 days') THEN 1 END) as recent_30d,
-                MAX(date) as last_sighting,COUNT(DISTINCT species) as species_count
-            FROM sightings
-            WHERE date != ''
-            GROUP BY location
-        ''')
-        
-        results = []
-        for row in cursor.fetchall():
-            r = dict(row)
-            
-            # Calculate recency factor
-            last_date = r['last_sighting']
-            if last_date:
-                days_ago = (datetime.now() - datetime.strptime(last_date, '%Y-%m-%dT')).days
-                recency = max(0, 30 - days_ago) / 30
-            else:
-                recency = 0
-            
-            # Risk score formula
-            population = 10000
-            risk_score = (r['total_sightings'] * recency) / population * 1000
-            risk_score += r['recent_7d'] * 0.5
-            
-            # Danger level
-            if risk_score >= 5:
-                danger = 'HIGH'
-                color = 'red'
-            elif risk_score >= 2:
-                danger = 'MEDIUM'
-                color = 'yellow'
-            else:
-                danger = 'LOW'
-                color = 'green'
-            
-            result = {
-                'location': r['location'],
-                'total_sightings': r['total_sightings'],
-                'recent_7d': r['recent_7d'],
-                'recent_30d': r['recent_30d'],
-                'species_count': r['species_count'],
-                'last_sighting': last_date,
-                'risk_score': round(risk_score, 2),
-                'danger_level': danger,
-                'color': color
-            }
-            
-            if danger_level == '' or danger_level == color:
-                results.append(result)
-        
-        conn.close()
-        results.sort(key=lambda x: x['risk_score'], reverse=True)
-        
-        return jsonify({
-            'success': True,
-            'data': results,
-            'filter': danger_level if danger_level else 'all'
-        })
-    
-    except Exception as e:
-        logger.error(f"Error in risk scoring: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8432)

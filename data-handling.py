@@ -4,6 +4,8 @@ import json
 from datetime import datetime
 import logging
 
+API_URL = 'https://dev-task.elancoapps.com/data/tick-sightings'
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -14,11 +16,11 @@ class TickDatabase:
         self.setup_database()
     
     def setup_database(self):
-        """Create the database schema"""
+        # Creating the database schema
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
         
-        # Create sightings table
+        # Creating the sightings table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS sightings (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -34,7 +36,7 @@ class TickDatabase:
             )
         ''')
         
-        # Create index for faster queries
+        # Creating index for faster queries
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_date ON sightings(date)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_location ON sightings(location)')
         
@@ -43,7 +45,7 @@ class TickDatabase:
         logger.info("Database setup complete")
     
     def insert_sighting(self, sighting_data):
-        """Insert a single sighting, skip if duplicate"""
+        # Inserting a single sighting. Also skips if it is duplicate entry.
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
         
@@ -72,12 +74,13 @@ class TickDatabase:
 
 
 class DataIngestion:
-    def __init__(self, api_url='https://dev-task.elancoapps.com/data/tick-sightings'):
+    # Initialize with API URL provided by Elanco
+    def __init__(self, api_url=API_URL):
         self.api_url = api_url
         self.db = TickDatabase()
     
     def fetch_data(self):
-        """Fetch data from API with error handling"""
+        # Fetching the data from API and undergoing error handling
         try:
             logger.info(f"Fetching data from {self.api_url}")
             response = requests.get(self.api_url, timeout=30)
@@ -93,13 +96,13 @@ class DataIngestion:
             return None
     
     def clean_data(self, raw_data):
-        """Clean and validate data"""
+        # Cleaning and validating the data
         if not raw_data:
             return []
         
         cleaned = []
         
-        # Handle if data is a list or dict with a key
+        # Handling list or dictionary input data
         if isinstance(raw_data, dict):
             # Try common keys
             for key in ['data', 'sightings', 'results']:
@@ -111,11 +114,11 @@ class DataIngestion:
             raw_data = [raw_data]
         
         for item in raw_data:
-            # Skip if missing critical fields
+            # Skip if missing primary fields
             if not item.get('id'):
                 continue
             
-            # Extract year and month from date
+            # Extracting year and month from date column
             date_str = item.get('date', '')
             year = ''
             month = ''
@@ -123,7 +126,7 @@ class DataIngestion:
             
             if date_str:
                 try:
-                    # Try to parse date (assumes YYYY-MM-DD format)
+                    # Parsing the date (assuming YYYY-MM-DD format)
                     date_parts = date_str.split('-')
                     if len(date_parts) >= 2:
                         year = date_parts[0]
@@ -141,7 +144,7 @@ class DataIngestion:
                 except:
                     pass
             
-            # Clean and normalize data
+            # Cleaning and normalising the data
             cleaned_item = {
                 'id': str(item.get('id', '')),
                 'date': date_str,
@@ -158,20 +161,20 @@ class DataIngestion:
         return cleaned
     
     def process_and_store(self):
-        """Main processing pipeline"""
+        # Main processing pipeline to store data into the database
         logger.info("Starting data ingestion process")
         
-        # Fetch data
+        # Fetching data
         raw_data = self.fetch_data()
         if not raw_data:
             logger.error("Failed to fetch data")
             return
         
-        # Clean data
+        # Cleaning data
         cleaned_data = self.clean_data(raw_data)
         logger.info(f"Cleaned {len(cleaned_data)} records")
         
-        # Store in database
+        # Storing in database
         inserted = 0
         duplicates = 0
         
@@ -186,6 +189,6 @@ class DataIngestion:
 
 
 if __name__ == '__main__':
-    # Run the ingestion
+    # Running the ingestion process
     ingestion = DataIngestion()
     ingestion.process_and_store()

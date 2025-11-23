@@ -1,4 +1,4 @@
-const API_BASE = 'http://15.207.114.176:8432/';
+const API_BASE = 'http://localhost:8432/';
 
 function showResult(elementId, data, isError = false) {
     const element = document.getElementById(elementId);
