@@ -1,4 +1,5 @@
-# Tick Sightings Analytics – Backend & Dashboard  
+# Tick Sightings Analytics – Backend & Dashboard
+### -Gokulkrishna S
 A backend + frontend MVP for analysing UK tick sightings data. Built for the Elanco Placement Technical Task.
 
 ---
