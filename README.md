@@ -24,7 +24,7 @@ This project provides a backend service and a simple dashboard interface for vis
 - Python  
 - Flask (REST API)  
 - NumPy  
-- Scikit-learn (Linear Regression model)  
+- Scikit-learn (Polynomial Regression model)  
 - Joblib (model saving/loading)
 
 ### **Frontend**
@@ -68,7 +68,7 @@ Filter sightings by:
 Identifies high-risk areas based on sighting density & frequency and colour codes them.
 
 ### 5. Forecasting (ML)  
-Predicts the next 3 months of sightings using a simple linear regression model.
+Predicts the next 3 months of sightings using a simple polynomial regression model.
 
 ---
 
